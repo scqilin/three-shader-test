@@ -15,7 +15,6 @@ body {
   display: flex;
   place-items: center;
   min-width: 320px;
-  min-height: 100vh;
 }
 canvas {
   display: block;
@@ -25,7 +24,7 @@ canvas {
   flex-wrap: wrap;
   flex-direction: row;
   width: 100%;
-  justify-content: space-evenly;
+  justify-content: center;
 
   & > * {
     width: max-content;
@@ -33,7 +32,6 @@ canvas {
     margin: 0.5rem;
     padding: 0.25rem;
     border-radius: 0.25rem;
-    background-color: #fff;
     box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
   }
 }

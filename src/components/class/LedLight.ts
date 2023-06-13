@@ -1,7 +1,8 @@
+import { Pixel8 } from './core/pixel8';
 export class LedLight {
     ledSize = 8; // 基于 8*8的点阵 
-    bitWidth = 2; // 位数
-    size = 5; // 点阵大小
+    bitNum = 2; // 位数
+    size = 4; // 点阵大小
     color = '#00bcd4'; // 点阵颜色
     shadowBlur = 0.5; // 点阵阴影
     // https://xantorohara.github.io/led-matrix-editor
@@ -77,23 +78,23 @@ export class LedLight {
     height: number = 1
     imgData: ImageData;
     rolInt: number;
-
+    pixel = new Pixel8();
     constructor(div, option = {
-        bitWidth: 2,
+        bitNum: 2,
         size: 5,
         color: '#00bcd4',
         shadowBlur: 0.5,
         // 自定义字符集
         charset: {}
     }) {
-        this.bitWidth = option.bitWidth ?? this.bitWidth;
+        this.bitNum = option.bitNum ?? this.bitNum;
         this.size = option.size ?? this.size;
         this.color = option.color ?? this.color;
         this.shadowBlur = option.shadowBlur ?? this.shadowBlur;
         if (option.charset) {
             this.ledStrs = Object.assign(this.ledStrs, option.charset);
         }
-        const width = this.bitWidth * this.ledSize * this.size, height = this.ledSize * this.size + this.size;
+        const width = this.bitNum * this.ledSize * this.size, height = this.ledSize * this.size + this.size;
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -109,10 +110,10 @@ export class LedLight {
     }
 
     run(str) {
-        const arr = str.padStart(this.bitWidth, '').split('');
+        const arr = str.padStart(this.bitNum, '').split('');
         this.ctx.clearRect(0, 0, this.width, this.height);
         arr.reverse().forEach((e, i) => {
-            this.drawNum((this.bitWidth - i - 1) * 8, e);
+            this.drawNum((this.bitNum - i - 1) * 8, e);
         });
         this.imgData = this.ctx.getImageData(0, 0, this.width, this.height);
         this.ctx.clearRect(0, 0, this.width, this.height);
@@ -122,11 +123,10 @@ export class LedLight {
     /**
      * 滚动画布
      * @param int 滚动间隔时间
-     * 默认 1000/60 每秒60帧
      * 传0 不会滚动
-     * */  
-    scroll(int = 1000/60 ) {
-        if(int > 0){
+     * */
+    scroll(int = 1000 / 120) {
+        if (int > 0) {
             this.rolInt && clearInterval(this.rolInt);
             this.dx = 0;
             this.rolInt = setInterval(() => {
@@ -139,7 +139,7 @@ export class LedLight {
                 }
             }, int);
         }
-        
+
     }
 
     // 停止滚动
@@ -148,16 +148,26 @@ export class LedLight {
     }
 
     drawNum(dx, str: string) {
-        const pos0 = this.getPos(dx, 0, this.getString(str));
+        const res = this.getString(str)
+        const pos0 = this.getPos(dx, 0, res);
         pos0.forEach(arr => {
             this.ctx.beginPath();
-            this.ctx.arc(arr[0] * this.size + this.size / 2 , arr[1] * this.size + this.size / 2, this.size * 0.4, 0, 2 * Math.PI);
+            this.ctx.arc(arr[0] * this.size + this.size / 2, arr[1] * this.size + this.size / 2, this.size * 0.4, 0, 2 * Math.PI);
             this.ctx.fill();
         })
     }
 
     getString(str) {
-        return this.ledStrs[str] ? this.hexToBinary(this.ledStrs[str]) : [];
+        return this.hexToBinary(this.getHex16(str));
+    }
+
+    getHex16(str) {
+        if (str == undefined || str == null || str == ' ') return;
+        if (this.ledStrs[str]) {
+            return this.ledStrs[str];
+        } else {
+            return this.pixel.getPixel(str);
+        }
     }
 
     getPos(x, y, strs) {
@@ -174,9 +184,10 @@ export class LedLight {
     }
 
     hexToBinary(hexStr) {
+        if (!hexStr) return [];
         hexStr = hexStr.toString();
         const arr = hexStr.match(/.{2}/g).reverse() || [];
-        const resoult:any = [];
+        const resoult: any = [];
         arr.forEach(e => {
             const num = parseInt(e, 16);
             const str = num.toString(2).padStart(8, '0').split('').reverse().join('');
